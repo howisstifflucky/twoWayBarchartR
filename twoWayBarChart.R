@@ -13,7 +13,7 @@ rm(list=ls())
 # Check for idiocy
 getwd()
 
-library(plyr) 
+library(plyr)
 library(dplyr)
 library(ggplot2)
 
@@ -60,16 +60,19 @@ data_summary <- function(data, varname, groupnames){
 ###########################
 
 df <- read.csv(file='FILENAME.csv')
-df$logSacOnset <- as.numeric(as.character(df$logSacOnset))
+# Deal with pesky NAs
+df$DV <- as.numeric(as.character(df$DV))
+# Some NAs were recorded as -9999. This converts them to proper NAs
+df$DV <- ifelse(df$DV==-9999, NA, df$DV)
+# YOU NEED TO WRITE AN IF STATEMENT FOR POS/NEG TO MAKE THEM positive AND negative
 
 ###########################
 
-df2 <- data_summary(df, varname='DV', 
+df2 <- data_summary(df, varname='DV',
                     groupnames=c('IV1', 'IV2'))
-                    
-# Convert probeloc to a factor variable
-# This was only required as I had NA values
-df2$probeloc=as.factor(df2$IV1)
+
+# Convert IV1 to a factor variable
+df2$IV1=as.factor(df2$IV1)
 head(df2)
 
 df2 <- na.omit(df2)
@@ -79,11 +82,16 @@ df2 <- na.omit(df2)
 # Standard deviation of the mean as error bar
 p <- ggplot(df2, aes(x=IV1, y=DV, fill=IV2)) + ylim(0,5) +
   geom_bar(stat='identity', position=position_dodge()) +
-  geom_errorbar(aes(ymin=logSacOnset-se, ymax=logSacOnset+se), width=.2,
+  geom_errorbar(aes(ymin=DV-se, ymax=DV+se), width=.2,
                 position=position_dodge(.9)) +
-  labs(x='IV1',y='DV') # Renames axis
+  xlab('Probe Location') + 
+# My RT data was log compressed, so I wanted to show this.
+#Either keep the below as it is and alter to suit your data,
+#or just use a string as above with xlab
+  ylab(expression(atop('Saccade Duration', paste(log[10](ms))))) +
+  theme(axis.title.y = element_text(vjust=.5))
 
 # Create theme, adjust axis and rename legend
-p + scale_fill_brewer(palette=1,name='IV2') + apatheme + 
-  coord_cartesian(ylim=c(2.75,2.85))
+p + scale_fill_brewer(palette=1,name='IV2nitude') + apatheme +
+  coord_cartesian(ylim=c(1.58,1.605))
 
